@@ -15,6 +15,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
+        {/* Sidebar is a client component (uses usePathname) */}
+        {/* Main content — offset left by sidebar width on desktop, add bottom padding for mobile nav */}
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

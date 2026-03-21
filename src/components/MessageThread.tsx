@@ -23,6 +23,7 @@ export default function MessageThread({ initialConversation }: Props) {
   }, [messages]);
 
   async function sendMessage(messageText: string, mediaUrl?: string) {
+    // Optimistic update — add message locally right away
     const optimistic: DirectMessage = {
       id: `msg_optimistic_${Date.now()}`,
       senderId: CURRENT_USER.id,

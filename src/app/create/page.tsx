@@ -27,6 +27,8 @@ export default function CreatePage() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Show a local preview so the user can see what they picked
+    setPreview(URL.createObjectURL(file));
 
     // TODO: Upload the file to UploadThing here and save the returned URL.
     // 1. Install: npm install uploadthing @uploadthing/react
@@ -34,7 +36,6 @@ export default function CreatePage() {
     // 3. Upload and save the URL:
     //      const [result] = await uploadFiles("imageUploader", { files: [file] });
     //      setUploadedUrl(result.url);
-    setPreview(URL.createObjectURL(file));
     setUploadedUrl(null);
     setUploading(true);
     setError(null);

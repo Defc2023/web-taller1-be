@@ -119,3 +119,23 @@ export async function updateProfile(data: {
   if (!res.ok) throw new Error("Failed to update profile");
   return res.json();
 }
+
+// ── Follow / Followers / Following ───────────────────────────
+
+export async function followUser(username: string) {
+  const res = await fetch(`/api/profile/${username}/follow`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to follow/unfollow user");
+  return res.json(); // { isFollowing: boolean }
+}
+
+export async function getFollowers(username: string) {
+  const res = await fetch(`/api/profile/${username}/followers`);
+  if (!res.ok) throw new Error("Failed to fetch followers");
+  return res.json(); // Array of { id, username, name, avatar, isVerified }
+}
+
+export async function getFollowing(username: string) {
+  const res = await fetch(`/api/profile/${username}/following`);
+  if (!res.ok) throw new Error("Failed to fetch following");
+  return res.json(); // Array of { id, username, name, avatar, isVerified }
+}

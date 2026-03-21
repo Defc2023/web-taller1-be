@@ -1,6 +1,8 @@
 "use client";
 
+// Stories bar — purely visual mock. Students can wire it to a real stories API.
 // TODO (students): Fetch real stories from your backend endpoint (e.g. GET /api/stories)
+
 import { useEffect, useState } from "react";
 
 interface Story {

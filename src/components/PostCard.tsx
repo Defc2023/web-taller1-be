@@ -18,6 +18,7 @@ export default function PostCard({ post: initial }: Props) {
   const { showToast } = useToast();
 
   async function handleLike() {
+    // Optimistic update
     setPost((p) => ({
       ...p,
       isLiked: !p.isLiked,
@@ -31,6 +32,7 @@ export default function PostCard({ post: initial }: Props) {
   }
 
   async function handleSave() {
+    // Optimistic update
     const wasSaved = post.isSaved;
     setPost((p) => ({ ...p, isSaved: !p.isSaved }));
 

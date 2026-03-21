@@ -7,6 +7,14 @@ import { CURRENT_USER } from "@/lib/mock-data";
 import { useToast } from "@/components/Toast";
 import Link from "next/link";
 
+interface FollowUser {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string;
+  isVerified: boolean;
+}
+
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>();
   const { showToast } = useToast();
@@ -16,6 +24,13 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"posts" | "reels" | "saved">("posts");
   const [loading, setLoading] = useState(true);
   const [reelsLoaded, setReelsLoaded] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // Followers / Following modal state
+  const [modalType, setModalType] = useState<"followers" | "following" | null>(null);
+  const [modalUsers, setModalUsers] = useState<FollowUser[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     // TODO: Change the URL below to your real backend endpoint.
@@ -34,10 +49,54 @@ export default function ProfilePage() {
 
   const isOwn = username === CURRENT_USER.username;
 
+  // TODO: Wire to POST /api/profile/[username]/follow
   async function handleFollow() {
-    showToast(`Ahora sigues a ${username}`);
+    setFollowLoading(true);
+    try {
+      const res = await fetch(`/api/profile/${username}/follow`, { method: "POST" });
+      const data = await res.json();
+      setIsFollowing(data.isFollowing);
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              followersCount: data.isFollowing
+                ? prev.followersCount + 1
+                : prev.followersCount - 1,
+            }
+          : prev
+      );
+      showToast(data.isFollowing ? `Ahora sigues a ${username}` : `Dejaste de seguir a ${username}`);
+    } catch {
+      showToast("Error al seguir/dejar de seguir");
+    } finally {
+      setFollowLoading(false);
+    }
   }
 
+  // TODO: fetch("/api/profile/[username]/followers")
+  // TODO: fetch("/api/profile/[username]/following")
+  async function openModal(type: "followers" | "following") {
+    setModalType(type);
+    setModalLoading(true);
+    setModalUsers([]);
+    try {
+      const res = await fetch(`/api/profile/${username}/${type}`);
+      const data = await res.json();
+      setModalUsers(data);
+    } catch {
+      showToast(`Error al cargar ${type}`);
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  function closeModal() {
+    setModalType(null);
+    setModalUsers([]);
+  }
+
+  // TODO: fetch(`/api/profile/${username}/reels`) on tab click
   function handleTabClick(tab: "posts" | "reels" | "saved") {
     setActiveTab(tab);
     if (tab === "reels" && !reelsLoaded) {
@@ -80,9 +139,14 @@ export default function ProfilePage() {
                 {/* TODO: Wire to POST /api/profile/[username]/follow */}
                 <button
                   onClick={handleFollow}
-                  className="px-6 py-1.5 text-sm font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  disabled={followLoading}
+                  className={`px-6 py-1.5 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${
+                    isFollowing
+                      ? "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
                 >
-                  Follow
+                  {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
                 </button>
                 <Link href="/messages" className="px-4 py-1.5 text-sm font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
                   Message
@@ -96,12 +160,12 @@ export default function ProfilePage() {
               <span className="font-semibold">{user.postsCount.toLocaleString()}</span>
               <span className="text-sm text-gray-500 ml-1">posts</span>
             </div>
-            <button className="hover:opacity-70">
+            <button className="hover:opacity-70" onClick={() => openModal("followers")}>
               {/* TODO: fetch("/api/profile/[username]/followers") */}
               <span className="font-semibold">{user.followersCount.toLocaleString()}</span>
               <span className="text-sm text-gray-500 ml-1">followers</span>
             </button>
-            <button className="hover:opacity-70">
+            <button className="hover:opacity-70" onClick={() => openModal("following")}>
               {/* TODO: fetch("/api/profile/[username]/following") */}
               <span className="font-semibold">{user.followingCount.toLocaleString()}</span>
               <span className="text-sm text-gray-500 ml-1">following</span>
@@ -238,6 +302,62 @@ export default function ProfilePage() {
       {activeTab === "saved" && (
         <div className="flex flex-col items-center gap-3 py-16 text-gray-400">
           <p className="font-semibold text-lg">No saved posts</p>
+        </div>
+      )}
+
+      {/* Followers / Following Modal */}
+      {modalType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={closeModal}>
+          <div
+            className="bg-white rounded-xl w-full max-w-sm mx-4 max-h-[70vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <h2 className="text-base font-semibold capitalize">{modalType}</h2>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-800 text-xl leading-none">
+                &times;
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="overflow-y-auto flex-1 px-4 py-2">
+              {modalLoading ? (
+                <div className="flex justify-center py-10 text-gray-400 text-sm">Loading…</div>
+              ) : modalUsers.length === 0 ? (
+                <div className="flex justify-center py-10 text-gray-400 text-sm">
+                  No {modalType} yet
+                </div>
+              ) : (
+                modalUsers.map((u) => (
+                  <Link
+                    key={u.id}
+                    href={`/profile/${u.username}`}
+                    onClick={closeModal}
+                    className="flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={u.avatar}
+                      alt={u.username}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm font-semibold truncate">{u.username}</p>
+                        {u.isVerified && (
+                          <svg viewBox="0 0 24 24" fill="#3b82f6" className="w-3.5 h-3.5 flex-shrink-0">
+                            <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">{u.name}</p>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
