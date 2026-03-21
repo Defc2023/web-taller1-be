@@ -11,6 +11,8 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // TODO: Change the URL below to your real backend endpoint.
+    // Example: fetch("https://your-api.com/posts")
     Promise.all([
       fetch("/api/posts").then((res) => res.json()),
       fetch("/api/suggestions").then((res) => res.json()),
@@ -48,6 +50,7 @@ export default function FeedPage() {
             </div>
           </div>
           <p className="text-xs font-semibold text-gray-400 mb-3">Suggested for you</p>
+          {/* TODO: Fetch suggestions from your backend — fetch("/api/suggestions") */}
           {suggestions.map((u) => (
             <div key={u.id} className="flex items-center gap-3 mb-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}

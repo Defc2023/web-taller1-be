@@ -9,6 +9,8 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // TODO: Change the URL below to your real backend endpoint.
+    // Example: fetch("https://your-api.com/messages")
     fetch("/api/messages")
       .then((res) => res.json())
       .then(setConversations)

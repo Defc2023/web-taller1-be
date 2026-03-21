@@ -20,6 +20,8 @@ export default function ReelCard({ reel }: Props) {
     setIsLiked((v) => !v);
     setLikesCount((v) => (isLiked ? v - 1 : v + 1));
 
+    // TODO (students): Call your real backend endpoint to like/unlike this reel
+    // Example: await fetch(`/api/reels/${reel.id}/like`, { method: "POST" })
     await fetch(`/api/reels/${reel.id}/like`, { method: "POST" });
     showToast(wasLiked ? "Like removido" : "Reel likeado con éxito");
   }

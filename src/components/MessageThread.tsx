@@ -34,6 +34,8 @@ export default function MessageThread({ initialConversation }: Props) {
     setMessages((prev) => [...prev, optimistic]);
     setSending(true);
 
+    // TODO: Change the URL below to your real backend endpoint.
+    // Example: fetch("https://your-api.com/messages", { method: "POST", ... })
     await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,6 +103,9 @@ export default function MessageThread({ initialConversation }: Props) {
 
       {/* Input */}
       <form onSubmit={handleSend} className="flex items-center gap-2 px-4 py-3 border-t border-gray-200">
+        {/* TODO: Add a file picker here for media messages.
+            After picking a file, upload it with UploadThing and pass the returned URL
+            as `mediaUrl` in the fetch body above. */}
         <UploadButton
           endpoint="imageUploader"
           onClientUploadComplete={(res) => {

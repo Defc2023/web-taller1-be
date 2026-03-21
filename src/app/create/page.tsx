@@ -28,6 +28,12 @@ export default function CreatePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // TODO: Upload the file to UploadThing here and save the returned URL.
+    // 1. Install: npm install uploadthing @uploadthing/react
+    // 2. Create your file router at /src/app/api/uploadthing/core.ts
+    // 3. Upload and save the URL:
+    //      const [result] = await uploadFiles("imageUploader", { files: [file] });
+    //      setUploadedUrl(result.url);
     setPreview(URL.createObjectURL(file));
     setUploadedUrl(null);
     setUploading(true);
@@ -56,6 +62,9 @@ export default function CreatePage() {
 
     try {
       if (tab === "post") {
+        // TODO: Replace `preview` with the real URL returned by UploadThing after upload.
+        // TODO: Change the URL below to your real backend endpoint.
+        // Example: fetch("https://your-api.com/posts", { method: "POST", ... })
         await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -63,6 +72,9 @@ export default function CreatePage() {
         });
         showToast("Post creado con éxito");
       } else {
+        // TODO: Replace `preview` with the real URL returned by UploadThing after upload.
+        // TODO: Change the URL below to your real backend endpoint.
+        // Example: fetch("https://your-api.com/reels", { method: "POST", ... })
         await fetch("/api/reels", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -137,6 +149,7 @@ export default function CreatePage() {
               <p className="text-xs">
                 {tab === "post" ? "JPEG, PNG, WEBP" : "MP4, MOV"}
               </p>
+              {/* TODO: Replace this area with <UploadDropzone> from @uploadthing/react */}
             </div>
           )}
         </div>
