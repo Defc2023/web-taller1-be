@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
-import { useUploadThing } from "@/lib/uploadthing";
+import { UploadDropzone } from "@/lib/uploadthing";
 
 type Tab = "post" | "reel";
 
@@ -19,40 +19,6 @@ export default function CreatePage() {
   const [audioTrack, setAudioTrack] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const { startUpload: startImageUpload } = useUploadThing("imageUploader");
-  const { startUpload: startVideoUpload } = useUploadThing("videoUploader");
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Show a local preview so the user can see what they picked
-    setPreview(URL.createObjectURL(file));
-
-    // TODO: Upload the file to UploadThing here and save the returned URL.
-    // 1. Install: npm install uploadthing @uploadthing/react
-    // 2. Create your file router at /src/app/api/uploadthing/core.ts
-    // 3. Upload and save the URL:
-    //      const [result] = await uploadFiles("imageUploader", { files: [file] });
-    //      setUploadedUrl(result.url);
-    setUploadedUrl(null);
-    setUploading(true);
-    setError(null);
-
-    try {
-      const startUpload = tab === "post" ? startImageUpload : startVideoUpload;
-      const res = await startUpload([file]);
-      if (res?.[0]) {
-        setUploadedUrl(res[0].ufsUrl);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-      setPreview(null);
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,54 +79,59 @@ export default function CreatePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* File picker */}
-        <div
-          onClick={() => !uploading && fileRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden relative"
-        >
-          {preview ? (
-            <>
-              {tab === "post" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={preview} alt="preview" className="w-full h-full object-cover" />
-              ) : (
-                <video src={preview} className="w-full h-full object-cover" muted loop autoPlay playsInline />
-              )}
-              {uploading && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="text-white text-sm font-semibold">Uploading…</div>
-                </div>
-              )}
-              {!uploading && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setPreview(null); setUploadedUrl(null); }}
-                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm hover:bg-black/80"
-                >
-                  ✕
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-3 text-gray-400 p-8 text-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              <p className="font-semibold text-sm">Click to select a file</p>
-              <p className="text-xs">
-                {tab === "post" ? "JPEG, PNG, WEBP" : "MP4, MOV"}
-              </p>
-              {/* TODO: Replace this area with <UploadDropzone> from @uploadthing/react */}
-            </div>
-          )}
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept={tab === "post" ? "image/*" : "video/*"}
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        {/* File picker — uses <UploadDropzone> from @uploadthing/react */}
+        {preview ? (
+          <div className="border-2 border-dashed border-gray-300 rounded-xl aspect-square flex flex-col items-center justify-center overflow-hidden relative">
+            {tab === "post" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt="preview" className="w-full h-full object-cover" />
+            ) : (
+              <video src={preview} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="text-white text-sm font-semibold">Uploading…</div>
+              </div>
+            )}
+            {!uploading && (
+              <button
+                type="button"
+                onClick={() => { setPreview(null); setUploadedUrl(null); }}
+                className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm hover:bg-black/80"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ) : (
+          <UploadDropzone
+            endpoint={tab === "post" ? "imageUploader" : "videoUploader"}
+            onUploadBegin={() => {
+              setUploading(true);
+              setError(null);
+            }}
+            onClientUploadComplete={(res) => {
+              if (res?.[0]) {
+                setUploadedUrl(res[0].ufsUrl);
+                // Show a local preview from the uploaded URL
+                setPreview(res[0].ufsUrl);
+              }
+              setUploading(false);
+            }}
+            onUploadError={(err) => {
+              setError(err instanceof Error ? err.message : "Upload failed");
+              setPreview(null);
+              setUploading(false);
+            }}
+            config={{ mode: "auto" }}
+            appearance={{
+              container: "border-2 border-dashed border-gray-300 rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors",
+              label: "text-gray-500 font-semibold text-sm",
+              allowedContent: "text-gray-400 text-xs",
+              button: "bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors ut-uploading:bg-blue-400",
+            }}
+          />
+        )}
 
         {/* Caption */}
         <div>
