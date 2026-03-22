@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_CONVERSATIONS } from "@/lib/mock-data";
+import { MOCK_CONVERSATIONS, CURRENT_USER } from "@/lib/mock-data";
 
 export async function GET(
   _req: NextRequest,
@@ -12,6 +12,14 @@ export async function GET(
   if (!conversation) {
     return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
   }
+
+  // Mark all messages as read when the conversation is opened
+  conversation.messages.forEach((msg) => {
+    if (msg.senderId !== CURRENT_USER.id) {
+      msg.isRead = true;
+    }
+  });
+  conversation.unreadCount = 0;
 
   return NextResponse.json(conversation);
 }

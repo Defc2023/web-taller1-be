@@ -69,6 +69,18 @@ export async function createReel(payload: {
   return res.json();
 }
 
+export async function saveReel(reelId: string) {
+  const res = await fetch(`/api/reels/${reelId}/save`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to save reel");
+  return res.json(); // { isSaved: boolean }
+}
+
+export async function getSavedItems(username: string) {
+  const res = await fetch(`/api/profile/${username}/saved`);
+  if (!res.ok) throw new Error("Failed to fetch saved items");
+  return res.json(); // { savedPosts: Post[], savedReels: Reel[] }
+}
+
 // ── Messages ─────────────────────────────────────────────────
 
 export async function getConversations() {

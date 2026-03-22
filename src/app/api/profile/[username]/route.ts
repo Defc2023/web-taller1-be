@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_POSTS, CURRENT_USER, CURRENT_USER_POSTS } from "@/lib/mock-data";
+import { MOCK_POSTS, CURRENT_USER } from "@/lib/mock-data";
 
 const USER_STORE: Record<string, typeof CURRENT_USER> = {
   [CURRENT_USER.username]: CURRENT_USER,
@@ -23,10 +23,7 @@ export async function GET(
     isVerified: false,
   };
 
-  const posts =
-    username === CURRENT_USER.username
-      ? CURRENT_USER_POSTS
-      : MOCK_POSTS.filter((p) => p.author.username === username);
+  const posts = MOCK_POSTS.filter((p) => p.author.username === username);
 
   return NextResponse.json({ user, posts });
 }

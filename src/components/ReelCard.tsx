@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { Reel } from "@/lib/types";
 import { formatDistanceToNow } from "@/lib/utils";
 import { useToast } from "@/components/Toast";
+
+// Helper to detect if a URL points to a real video file (not a placeholder image)
+function isVideoUrl(url: string): boolean {
+  if (/\.(mp4|mov|webm|ogg)(\?|$)/i.test(url)) return true;
+  if (/ufs\.sh|utfs\.io|uploadthing/i.test(url)) return true;
+  return false;
+}
 
 interface Props {
   reel: Reel;
@@ -13,7 +20,12 @@ interface Props {
 export default function ReelCard({ reel }: Props) {
   const [isLiked, setIsLiked] = useState(reel.isLiked);
   const [likesCount, setLikesCount] = useState(reel.likesCount);
+  const [isSaved, setIsSaved] = useState(reel.isSaved);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const { showToast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasRealVideo = isVideoUrl(reel.videoUrl);
 
   async function handleLike() {
     const wasLiked = isLiked;
@@ -26,27 +38,68 @@ export default function ReelCard({ reel }: Props) {
     showToast(wasLiked ? "Like removido" : "Reel likeado con éxito");
   }
 
+  async function handleSave() {
+    const wasSaved = isSaved;
+    setIsSaved((v) => !v);
+
+    // TODO (students): Call your real backend endpoint to save/unsave this reel
+    // Example: await fetch(`/api/reels/${reel.id}/save`, { method: "POST" })
+    await fetch(`/api/reels/${reel.id}/save`, { method: "POST" });
+    showToast(wasSaved ? "Reel removido de guardados" : "Reel guardado con éxito");
+  }
+
   return (
     <div className="relative h-full w-full bg-black rounded-xl overflow-hidden snap-start flex-shrink-0" style={{ width: 320, height: 568 }}>
-      {/* Thumbnail / video placeholder */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={reel.thumbnailUrl}
-        alt={reel.caption}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+      {/* Thumbnail / video — click to play/pause */}
+      {hasRealVideo ? (
+        <video
+          ref={videoRef}
+          src={reel.videoUrl}
+          poster={!isVideoUrl(reel.thumbnailUrl) ? reel.thumbnailUrl : undefined}
+          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          playsInline
+          loop
+          preload="metadata"
+          onClick={() => {
+            if (videoRef.current) {
+              if (isPlaying) { videoRef.current.pause(); } else { videoRef.current.play(); }
+            }
+            setIsPlaying((v) => !v);
+          }}
+        />
+      ) : (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={reel.thumbnailUrl}
+            alt={reel.caption}
+            className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+            onClick={() => setIsPlaying((v) => !v)}
+          />
+        </>
+      )}
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
 
-      {/* Play button hint */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-60">
-        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-          <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7 ml-1">
-            <path d="M8 5v14l11-7z" />
-          </svg>
+      {/* Play/Pause button hint */}
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-60 pointer-events-none">
+          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+            <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7 ml-1">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
+      {isPlaying && (
+        <div className="absolute top-3 left-3 pointer-events-none">
+          <div className="bg-black/40 rounded-full px-2 py-1 flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-white text-xs font-medium">Playing</span>
+          </div>
+        </div>
+      )}
 
       {/* Right action bar */}
       <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5">
@@ -63,14 +116,30 @@ export default function ReelCard({ reel }: Props) {
           <span className="text-white text-xs font-medium">{likesCount.toLocaleString()}</span>
         </button>
 
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-7 h-7">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
           </svg>
           <span className="text-white text-xs font-medium">{reel.commentsCount.toLocaleString()}</span>
         </button>
 
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={handleSave} className="flex flex-col items-center gap-1">
+          <svg
+            viewBox="0 0 24 24"
+            fill={isSaved ? "white" : "none"}
+            stroke="white"
+            strokeWidth={2}
+            className="w-7 h-7"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+          </svg>
+          <span className="text-white text-xs font-medium">{isSaved ? "Saved" : "Save"}</span>
+        </button>
+
+        <button onClick={() => {
+          navigator.clipboard.writeText(window.location.origin + `/reels`);
+          showToast("Enlace copiado al portapapeles");
+        }} className="flex flex-col items-center gap-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-7 h-7">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
           </svg>
@@ -101,6 +170,17 @@ export default function ReelCard({ reel }: Props) {
         )}
         <p className="text-white/60 text-xs mt-1">{reel.viewsCount.toLocaleString()} views</p>
       </div>
+
+      {/* Comments panel */}
+      {showComments && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm rounded-b-xl max-h-[50%] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white font-semibold text-sm">Comments ({reel.commentsCount})</h3>
+            <button onClick={() => setShowComments(false)} className="text-white/60 text-lg">&times;</button>
+          </div>
+          <p className="text-white/50 text-xs">Comments coming soon...</p>
+        </div>
+      )}
     </div>
   );
 }

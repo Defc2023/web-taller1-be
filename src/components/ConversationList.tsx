@@ -14,7 +14,7 @@ export default function ConversationList({ conversations, activeId }: Props) {
   return (
     <div className="flex flex-col overflow-y-auto h-full">
       <div className="px-4 py-4 border-b border-gray-200">
-        <h2 className="font-bold text-lg">{CURRENT_USER.username}</h2>
+        <h2 className="font-bold text-sm">{CURRENT_USER.username}</h2>
       </div>
       {conversations.map((conv) => {
         const isActive = conv.id === activeId;

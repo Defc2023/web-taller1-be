@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     viewsCount: 0,
     createdAt: new Date().toISOString(),
     isLiked: false,
+    isSaved: false,
   };
 
   MOCK_REELS.unshift(newReel);

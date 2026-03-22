@@ -17,13 +17,17 @@ export default function MessageThreadPage() {
     // Example:
     //   fetch(`https://your-api.com/messages/${id}`)
     //   fetch("https://your-api.com/messages")
-    Promise.all([
-      fetch(`/api/messages/${id}`).then((res) => res.json()),
-      fetch("/api/messages").then((res) => res.json()),
-    ]).then(([conv, list]) => {
-      setConversation(conv);
-      setConversations(list);
-    }).finally(() => setLoading(false));
+    // Fetch the conversation first (marks as read), then fetch the list
+    fetch(`/api/messages/${id}`)
+      .then((res) => res.json())
+      .then((conv) => {
+        setConversation(conv);
+        return fetch("/api/messages").then((res) => res.json());
+      })
+      .then((list) => {
+        setConversations(list);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <div className="flex justify-center py-20 text-gray-400">Loading…</div>;

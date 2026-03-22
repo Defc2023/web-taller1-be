@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { Post, User } from "@/lib/types";
 import PostCard from "@/components/PostCard";
 import StoriesBar from "@/components/StoriesBar";
+import { useToast } from "@/components/Toast";
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [suggestions, setSuggestions] = useState<User[]>([]);
+  const [suggestions, setSuggestions] = useState<(User & { isFollowing?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // TODO: Change the URL below to your real backend endpoint.
@@ -59,7 +61,19 @@ export default function FeedPage() {
                 <p className="text-xs font-semibold truncate">{u.username}</p>
                 <p className="text-xs text-gray-400">Suggested</p>
               </div>
-              <button className="text-xs font-semibold text-blue-500 hover:text-blue-700">Follow</button>
+              <button
+                onClick={async () => {
+                  const res = await fetch(`/api/profile/${u.username}/follow`, { method: "POST" });
+                  const data = await res.json();
+                  setSuggestions((prev) =>
+                    prev.map((s) => s.id === u.id ? { ...s, isFollowing: data.isFollowing } : s)
+                  );
+                  showToast(data.isFollowing ? `Ahora sigues a ${u.username}` : `Dejaste de seguir a ${u.username}`);
+                }}
+                className={`text-xs font-semibold ${u.isFollowing ? "text-gray-500 hover:text-gray-700" : "text-blue-500 hover:text-blue-700"}`}
+              >
+                {u.isFollowing ? "Following" : "Follow"}
+              </button>
             </div>
           ))}
           <p className="text-xs text-gray-300 mt-4">© 2025 Fakestagram · Teaching Project</p>

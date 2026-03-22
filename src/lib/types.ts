@@ -40,6 +40,7 @@ export interface Reel {
   viewsCount: number;
   createdAt: string;
   isLiked: boolean;
+  isSaved: boolean;
   audioTrack?: string;
 }
 
